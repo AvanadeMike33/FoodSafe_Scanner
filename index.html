@@ -241,4 +241,84 @@
             // Example for Yuka API integration:
             const yukaApiUrl = `https://api.yuka.io/v1/product/${barcode}`;
             fetch(yukaApiUrl)
-                .then(response
+                .then(response => response.json())
+                .then(data => {
+                    if (data.product) {
+                        displayProductInfo(data.product);
+                    } else {
+                        document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].product_not_found;
+                    }
+                });
+        }
+
+        function displayProductInfo(product) {
+            let resultHtml = `<h3>Product: ${product.product_name || "Unknown"}</h3>`;
+            resultHtml += "<h4>" + LANGUAGES[currentLanguage].risky_ingredients + ":</h4><ul>";
+
+            if (product.ingredients_text) {
+                const ingredients = product.ingredients_text.split(",").map(ingredient => ingredient.trim());
+                ingredients.forEach(ingredient => {
+                    resultHtml += `<li>${ingredient}</li>`;
+                });
+
+                const riskyIngredients = analyzeRisks(ingredients);
+                if (riskyIngredients.length > 0) {
+                    resultHtml += "<h4>" + LANGUAGES[currentLanguage].risky_ingredients + ":</h4><ul>";
+                    riskyIngredients.forEach(risk => {
+                        resultHtml += `<li class="ingredient-risk"><strong>${risk.ingredient}</strong>: ${risk.risk}</li>`;
+                    });
+                    resultHtml += "</ul>";
+                } else {
+                    resultHtml += "<p>" + LANGUAGES[currentLanguage].no_risky_ingredients + "</p>";
+                }
+            } else {
+                resultHtml += "<li>No ingredients listed.</li>";
+            }
+
+            if (product.nutriments) {
+                resultHtml += "<h4>" + LANGUAGES[currentLanguage].energy + ":</h4><ul>";
+                if (product.nutriments.energy_kcal) {
+                    resultHtml += `<li>${LANGUAGES[currentLanguage].energy}: ${product.nutriments.energy_kcal} kcal</li>`;
+                }
+                if (product.nutriments.fat) {
+                    resultHtml += `<li>${LANGUAGES[currentLanguage].fat}: ${product.nutriments.fat} g</li>`;
+                }
+                if (product.nutriments.sugars) {
+                    resultHtml += `<li>${LANGUAGES[currentLanguage].sugars}: ${product.nutriments.sugars} g</li>`;
+                }
+                if (product.nutriments.salt) {
+                    resultHtml += `<li>${LANGUAGES[currentLanguage].salt}: ${product.nutriments.salt} g</li>`;
+                }
+                resultHtml += "</ul>";
+            }
+
+            // Show cancer warning if applicable
+            if (product.ingredients_text && /aspartame|acrylamide|BHA|BHT/i.test(product.ingredients_text)) {
+                resultHtml += `<p><strong>${LANGUAGES[currentLanguage].cancer_warning}</strong></p>`;
+            }
+
+            // Add OpenAI suggestion
+            if (product.nutriments) {
+                resultHtml += `<p><strong>${LANGUAGES[currentLanguage].openai_suggestion}</strong> based on 2% of daily intake recommendation.</p>`;
+            }
+
+            resultHtml += `<button onclick="startScanner()">Scan Another Product</button>`;
+            document.getElementById("result").innerHTML = resultHtml;
+        }
+
+        function analyzeRisks(ingredients) {
+            const risks = [];
+            ingredients.forEach(ingredient => {
+                const lowerIngredient = ingredient.toLowerCase();
+                if (RISKY_INGREDIENTS[lowerIngredient]) {
+                    risks.push({
+                        ingredient: ingredient,
+                        risk: RISKY_INGREDIENTS[lowerIngredient]
+                    });
+                }
+            });
+            return risks;
+        }
+    </script>
+</body>
+</html>
