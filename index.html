@@ -17,9 +17,9 @@
             padding: 0;
             background-color: #f8f8f8;
             display: flex;
-            justify-content: flex-start; /* Changed to allow scrolling from the top */
-            align-items: flex-start; /* Allow scrolling from the top */
-            height: 100%; /* Allow full body height */
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             flex-direction: column;
             overflow-y: auto; /* Allow vertical scrolling */
         }
@@ -28,7 +28,7 @@
             font-size: 24px;
             color: #333;
             text-align: center;
-            margin: 20px auto; /* Ensure it's centered and has margin */
+            margin: 20px auto;
         }
 
         .scanner-container {
@@ -146,31 +146,9 @@
             #feedback {
                 font-size: 12px;
             }
+
         }
 
-        @media (max-width: 400px) {
-            .scanner-container {
-                padding: 16px;
-                margin-top: 30px;
-            }
-
-            h1 {
-                font-size: 18px;
-            }
-
-            button {
-                font-size: 14px;
-                padding: 12px;
-            }
-
-            #result h3, #result h4 {
-                font-size: 16px;
-            }
-
-            li {
-                font-size: 12px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -194,6 +172,13 @@
             "acrylamide": "Classified as a carcinogen, linked to increased cancer risk.",
             "monosodium glutamate": "Can cause headaches and other adverse reactions.",
             "salt": "Excessive consumption of salt can lead to high blood pressure, increased risk of heart disease, stroke, kidney disease, and headaches due to dehydration."
+        };
+
+        const DAILY_RECOMMENDATIONS = {
+            calories: 2000,  // Recommended daily intake of calories (average)
+            fat: 70,  // g
+            sugar: 50,  // g
+            salt: 6  // g
         };
 
         let lastScannedBarcode = null;
@@ -280,6 +265,13 @@
                 });
         }
 
+        function calculateCalories(fat, sugars, salt) {
+            const caloriesFromFat = fat ? fat * 9 : 0;
+            const caloriesFromSugar = sugars ? sugars * 4 : 0;
+            const caloriesFromSalt = salt ? salt * 0 : 0;  // Salt doesn't contribute to calories, but we leave it here for completeness
+            return caloriesFromFat + caloriesFromSugar + caloriesFromSalt;
+        }
+
         function displayProductInfo(product) {
             let resultHtml = `<h3>${product.product_name || "Unknown Product"}</h3>`;
             resultHtml += "<h4>Ingredients:</h4><ul>";
@@ -305,14 +297,20 @@
                 resultHtml += "<li>No ingredients listed.</li>";
             }
 
+            // Nutritional Information
             if (product.nutriments) {
                 resultHtml += "<h4>Nutritional Information:</h4><ul>";
                 if (product.nutriments.energy_kcal) {
                     resultHtml += `<li>Energy: ${product.nutriments.energy_kcal} kcal</li>`;
-                    let dailyCalorieIntake = 2000; // Average daily caloric intake
-                    let percentage = (product.nutriments.energy_kcal / dailyCalorieIntake) * 100;
-                    resultHtml += `<li>Percentage of Daily Calorie Intake: ${percentage.toFixed(2)}%</li>`;
+                } else {
+                    // Calculate calories if not provided
+                    const fat = product.nutriments.fat || 0;
+                    const sugars = product.nutriments.sugars || 0;
+                    const salt = product.nutriments.salt || 0;
+                    const calculatedCalories = calculateCalories(fat, sugars, salt);
+                    resultHtml += `<li>Energy: ${calculatedCalories} kcal (calculated)</li>`;
                 }
+
                 if (product.nutriments.fat) {
                     resultHtml += `<li>Fat: ${product.nutriments.fat} g</li>`;
                 }
@@ -322,6 +320,15 @@
                 if (product.nutriments.salt) {
                     resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
                 }
+
+                // Add Daily Recommendations section
+                resultHtml += "<h4>Daily Nutritional Recommendations:</h4>";
+                resultHtml += `<ul>
+                                <li>Calories: ${DAILY_RECOMMENDATIONS.calories} kcal</li>
+                                <li>Fat: ${DAILY_RECOMMENDATIONS.fat} g</li>
+                                <li>Sugars: ${DAILY_RECOMMENDATIONS.sugar} g</li>
+                                <li>Salt: ${DAILY_RECOMMENDATIONS.salt} g</li>
+                              </ul>`;
 
                 resultHtml += "</ul>";
             }
