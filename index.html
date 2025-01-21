@@ -248,11 +248,14 @@
                 resultHtml += "</ul>";
             }
 
-            // AI suggestion (sending ingredients and nutrition to AI API)
-            getAISuggestion(product).then(aiSuggestion => {
-                resultHtml += `<p><strong>AI Suggestion:</strong> ${aiSuggestion}</p>`;
-                document.getElementById("result").innerHTML = resultHtml;
-            });
+            // Commented out AI suggestion section
+            // AI Suggestion (sending ingredients and nutrition to AI API)
+            // getAISuggestion(product).then(aiSuggestion => {
+            //     resultHtml += `<p><strong>AI Suggestion:</strong> ${aiSuggestion}</p>`;
+            //     document.getElementById("result").innerHTML = resultHtml;
+            // });
+
+            document.getElementById("result").innerHTML = resultHtml;
         }
 
         function analyzeRisks(ingredients) {
@@ -269,28 +272,29 @@
             return risks;
         }
 
-        async function getAISuggestion(product) {
-            const ingredientsText = product.ingredients_text || "No ingredients listed.";
-            const nutritionalText = `Energy: ${product.nutriments.energy_kcal || 0} kcal, Fat: ${product.nutriments.fat || 0} g, Sugars: ${product.nutriments.sugars || 0} g, Salt: ${product.nutriments.salt || 0} g.`;
+        // Commented out AI suggestion function
+        // async function getAISuggestion(product) {
+        //     const ingredientsText = product.ingredients_text || "No ingredients listed.";
+        //     const nutritionalText = `Energy: ${product.nutriments.energy_kcal || 0} kcal, Fat: ${product.nutriments.fat || 0} g, Sugars: ${product.nutriments.sugars || 0} g, Salt: ${product.nutriments.salt || 0} g.`;
 
-            const prompt = `Based on the ingredients: ${ingredientsText} and nutritional information: ${nutritionalText}, provide a suggestion on the healthiness of this product.`;
+        //     const prompt = `Based on the ingredients: ${ingredientsText} and nutritional information: ${nutritionalText}, provide a suggestion on the healthiness of this product.`;
 
-            const response = await fetch('https://api.openai.com/v1/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer YOUR_OPENAI_API_KEY`
-                },
-                body: JSON.stringify({
-                    model: "text-davinci-003",
-                    prompt: prompt,
-                    max_tokens: 100
-                })
-            });
+        //     const response = await fetch('https://api.openai.com/v1/completions', {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //             'Authorization': `Bearer YOUR_OPENAI_API_KEY`
+        //         },
+        //         body: JSON.stringify({
+        //             model: "text-davinci-003",
+        //             prompt: prompt,
+        //             max_tokens: 100
+        //         })
+        //     });
 
-            const data = await response.json();
-            return data.choices[0].text.trim();
-        }
+        //     const data = await response.json();
+        //     return data.choices[0].text.trim();
+        // }
     </script>
 </body>
 </html>
