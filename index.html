@@ -14,30 +14,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
             height: 100vh;
-            background-color: #f9f9f9;
+            background-color: #f0f0f0;
         }
 
         h1 {
             color: #333;
             margin: 20px 0;
-        }
-
-        .app-frame {
-            width: 360px;
-            height: 640px;
-            border: 20px solid #333;
-            border-radius: 36px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            background-color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            padding: 20px;
-            position: relative;
+            font-size: 24px;
         }
 
         .scanner-container {
@@ -45,25 +30,22 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 100%;
+            width: 80%;
+            max-width: 400px;
             text-align: center;
             position: relative;
-            margin-top: 20px;
         }
 
         button {
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 15px;
+            padding: 12px;
             font-size: 16px;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             margin-top: 20px;
             width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
         button i {
@@ -76,10 +58,10 @@
 
         #barcode-scanner {
             width: 100%;
-            height: 100vh; /* Full screen */
+            height: 100vh;
             background-color: #333;
             margin-top: 20px;
-            display: none; /* Initially hidden */
+            display: none;
         }
 
         #result {
@@ -88,22 +70,26 @@
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             margin-top: 30px;
-            width: 100%;
-            text-align: left;
-            display: none; /* Hidden until scanning is complete */
+            width: 80%;
+            max-width: 400px;
+            display: none;
         }
 
-        h3, h4 {
+        h3 {
             color: #333;
+            font-size: 20px;
+            margin-bottom: 15px;
         }
 
         ul {
             list-style-type: none;
             padding: 0;
+            margin: 0;
         }
 
         li {
             margin: 5px 0;
+            font-size: 14px;
         }
 
         .ingredient-risk {
@@ -116,48 +102,21 @@
             color: #888;
             font-size: 14px;
         }
-
-        @media (min-width: 768px) {
-            .app-frame {
-                display: none; /* Hide app frame on larger screens */
-            }
-
-            body {
-                display: block;
-                justify-content: flex-start;
-                padding: 40px;
-            }
-        }
-
-        @media (max-width: 767px) {
-            body {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                background-color: #f0f0f0;
-            }
-
-            .app-frame {
-                display: flex;
-            }
-        }
     </style>
 </head>
 <body>
-    <div class="app-frame">
-        <h1>Scan a Product Barcode</h1>
 
-        <div class="scanner-container">
-            <button onclick="startScanner()">
-                <i class="fas fa-barcode" style="font-size: 30px; color: #fff;"></i> Start Scanning
-            </button>
-            <div id="barcode-scanner"></div>
-            <div id="feedback"></div>
-        </div>
+    <h1>Scan a Product Barcode</h1>
 
-        <div id="result"></div>
+    <div class="scanner-container">
+        <button onclick="startScanner()">
+            <i class="fas fa-barcode"></i> Start Scanning
+        </button>
+        <div id="barcode-scanner"></div>
+        <div id="feedback"></div>
     </div>
+
+    <div id="result"></div>
 
     <script>
         const RISKY_INGREDIENTS = {
@@ -232,7 +191,7 @@
         }
 
         function displayProductInfo(product) {
-            let resultHtml = `<h3>Product: ${product.product_name || "Unknown"}</h3>`;
+            let resultHtml = `<h3>${product.product_name || "Unknown Product"}</h3>`;
             resultHtml += "<h4>Ingredients:</h4><ul>";
 
             if (product.ingredients_text) {
@@ -270,60 +229,9 @@
                     resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
                 }
                 resultHtml += "</ul>";
-
-                // Provide personalized consumption recommendations
-                resultHtml += "<h4>Consumption Advice:</h4>";
-                resultHtml += generateConsumptionAdvice(product.nutriments);
             }
 
             document.getElementById("result").innerHTML = resultHtml;
-        }
-
-        function generateConsumptionAdvice(nutriments) {
-            let advice = "";
-
-            // Set basic daily limits for an average adult
-            const dailyLimits = {
-                energy_kcal: 2000,  // kcal
-                fat: 70,            // grams
-                sugars: 30,         // grams
-                salt: 6             // grams
-            };
-
-            // Energy (calories) recommendation
-            if (nutriments.energy_kcal) {
-                const percentage = (nutriments.energy_kcal / dailyLimits.energy_kcal) * 100;
-                advice += `<p>This product contains ${nutriments.energy_kcal} kcal, which is ${Math.round(percentage)}% of the average adult's daily energy intake.</p>`;
-            }
-
-            // Fat recommendation
-            if (nutriments.fat) {
-                const fatPercentage = (nutriments.fat / dailyLimits.fat) * 100;
-                advice += `<p>This product contains ${nutriments.fat}g of fat, which is ${Math.round(fatPercentage)}% of the recommended daily fat intake.</p>`;
-            }
-
-            // Sugars recommendation
-            if (nutriments.sugars) {
-                const sugarPercentage = (nutriments.sugars / dailyLimits.sugars) * 100;
-                advice += `<p>This product contains ${nutriments.sugars}g of sugar, which is ${Math.round(sugarPercentage)}% of the recommended daily sugar intake.</p>`;
-            }
-
-            // Salt recommendation
-            if (nutriments.salt) {
-                const saltPercentage = (nutriments.salt / dailyLimits.salt) * 100;
-                advice += `<p>This product contains ${nutriments.salt}g of salt, which is ${Math.round(saltPercentage)}% of the recommended daily salt intake.</p>`;
-            }
-
-            // Provide moderation advice for high-risk ingredients
-            if (nutriments.salt > 2) {
-                advice += `<p><strong>Note:</strong> This product has a high amount of salt. Excessive salt intake can lead to high blood pressure. Consume in moderation.</p>`;
-            }
-
-            if (nutriments.sugars > 15) {
-                advice += `<p><strong>Note:</strong> This product contains a high amount of sugar. Consuming too much sugar can contribute to weight gain and other health issues. Consider limiting intake.</p>`;
-            }
-
-            return advice;
         }
 
         function analyzeRisks(ingredients) {
