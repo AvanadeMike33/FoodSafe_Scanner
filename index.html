@@ -17,8 +17,8 @@
             padding: 0;
             background-color: #f8f8f8;
             display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Changed to allow scrolling from the top */
+            justify-content: flex-start; /* Changed to allow scrolling from the top */
+            align-items: flex-start; /* Allow scrolling from the top */
             height: 100%; /* Allow full body height */
             flex-direction: column;
             overflow-y: auto; /* Allow vertical scrolling */
@@ -27,7 +27,8 @@
         h1 {
             font-size: 24px;
             color: #333;
-            margin-top: 20px;
+            text-align: center;
+            margin: 20px auto; /* Ensure it's centered and has margin */
         }
 
         .scanner-container {
