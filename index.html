@@ -1,134 +1,241 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Product Analyzer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-</head>
-<body>
-    <h1>Scan a Product Barcode</h1>
-    
-    <button onclick="startScanner()">Start Scanning</button>
-    <div id="barcode-scanner"></div>
-    
-    <div id="result"></div>
-    
-    <script>
-        const RISKY_INGREDIENTS = {
-            "aspartame": "May cause allergic reactions and has potential brain effects.",
-            "BHA": "Potential carcinogen linked to liver and kidney damage.",
-            "BHT": "Potential carcinogen that can alter metabolism.",
-            "acrylamide": "Classified as a carcinogen, linked to increased cancer risk.",
-            "monosodium glutamate": "Can cause headaches and other adverse reactions.",
-            "salt": "Excessive consumption of salt can lead to high blood pressure, increased risk of heart disease, stroke, kidney disease, and headaches due to dehydration."
-        };
-
-        function startScanner() {
-            Quagga.init({
-                inputStream: {
-                    name: "Live",
-                    type: "LiveStream",
-                    target: document.querySelector('#barcode-scanner'),
-                    constraints: {
-                        facingMode: "environment"
-                    }
-                },
-                decoder: {
-                    readers: ["ean_reader", "upc_reader"]
-                }
-            }, function(err) {
-                if (err) {
-                    console.log(err);
-                    return;
-                }
-                Quagga.start();
-            });
-
-            Quagga.onDetected(function(result) {
-                const barcode = result.codeResult.code;
-                alert("Barcode detected: " + barcode);
-                fetchProductData(barcode);
-            });
+    <title>Scanner Prodotti Alimentari</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        function fetchProductData(barcode) {
-            const apiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`; 
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+        }
 
-            fetch(apiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 1) {
-                        displayProductInfo(data.product);
-                    } else {
-                        alert('Product not found!');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to fetch product data!');
-                });
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #4CAF50;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #777;
+        }
+
+        .scan-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .scan-btn {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .scan-btn:hover {
+            background-color: #45a049;
+        }
+
+        #feedback {
+            margin-top: 10px;
+            font-size: 1rem;
+            color: #FF5722;
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .loading {
+            font-size: 1.5rem;
+            color: #4CAF50;
+            text-align: center;
+        }
+
+        .product-info {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-info h3 {
+            color: #333;
+            font-size: 1.8rem;
+        }
+
+        .product-info h4 {
+            color: #4CAF50;
+            font-size: 1.4rem;
+            margin-top: 10px;
+        }
+
+        .product-info ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .product-info li {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Scanner Prodotti Alimentari</h1>
+            <p>Scansiona il codice a barre per scoprire se il prodotto è nocivo.</p>
+        </header>
+
+        <div class="scan-section">
+            <button id="scanButton" class="scan-btn">
+                <img src="https://img.icons8.com/ios/50/000000/barcode-scanner.png" alt="Scansiona Barcode">
+                <span>Scansiona Barcode</span>
+            </button>
+            <input type="file" id="barcodeInput" accept="image/*" style="display: none;">
+            <div id="feedback" class="feedback"></div>
+        </div>
+
+        <div id="result" class="result-section">
+            <div id="loading" class="loading">Caricamento...</div>
+            <div id="productInfo" class="product-info"></div>
+        </div>
+    </div>
+
+    <script>
+        function fetchProductData(barcode) {
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('productInfo').innerHTML = '';
+
+            const openFoodFactsApiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+            const yukaApiUrl = `https://api.yuka.io/v1/product/${barcode}`;
+            const edamamApiUrl = `https://api.edamam.com/api/food-database/v2/parser?app_id=YOUR_APP_ID&app_key=YOUR_APP_KEY&ingr=${barcode}`;
+
+            Promise.all([
+                fetch(openFoodFactsApiUrl).then(response => response.json()),
+                fetch(yukaApiUrl).then(response => response.json()),
+                fetch(edamamApiUrl).then(response => response.json())
+            ])
+            .then(results => {
+                let productFound = false;
+                let productInfo = {};
+
+                const openFoodFactsData = results[0];
+                if (openFoodFactsData.status === 1) {
+                    productFound = true;
+                    productInfo = openFoodFactsData.product;
+                }
+
+                const yukaData = results[1];
+                if (yukaData && yukaData.product) {
+                    productFound = true;
+                    productInfo = yukaData.product;
+                }
+
+                const edamamData = results[2];
+                if (edamamData && edamamData.foods && edamamData.foods.length > 0) {
+                    productFound = true;
+                    productInfo = edamamData.foods[0];
+                }
+
+                if (productFound) {
+                    displayProductInfo(productInfo);
+                } else {
+                    document.getElementById('feedback').innerHTML = 'Prodotto non trovato.';
+                }
+
+                document.getElementById('loading').style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Errore API:', error);
+                document.getElementById('feedback').innerHTML = 'Errore nel recupero dei dati.';
+                document.getElementById('loading').style.display = 'none';
+            });
         }
 
         function displayProductInfo(product) {
-            let resultHtml = `<h3>Product: ${product.product_name || "Unknown"}</h3>`;
-            resultHtml += "<h4>Ingredients:</h4><ul>";
-            
+            let resultHtml = `<h3>${product.product_name || 'Prodotto sconosciuto'}</h3>`;
+            resultHtml += `<h4>Ingredienti:</h4><ul>`;
+
             if (product.ingredients_text) {
-                const ingredients = product.ingredients_text.split(",").map(ingredient => ingredient.trim());
+                const ingredients = product.ingredients_text.split(',').map(ingredient => ingredient.trim());
                 ingredients.forEach(ingredient => {
                     resultHtml += `<li>${ingredient}</li>`;
                 });
-                const riskyIngredients = analyzeRisks(ingredients);
-                if (riskyIngredients.length > 0) {
-                    resultHtml += "<h4>Risky Ingredients:</h4><ul>";
-                    riskyIngredients.forEach(risk => {
-                        resultHtml += `<li><strong>${risk.ingredient}</strong>: ${risk.risk}</li>`;
-                    });
-                    resultHtml += "</ul>";
-                } else {
-                    resultHtml += "<p>No risky ingredients found.</p>";
-                }
             } else {
-                resultHtml += "<li>No ingredients listed.</li>";
+                resultHtml += '<li>Ingredienti non disponibili</li>';
             }
-            
-            resultHtml += "</ul>";
+
+            resultHtml += '</ul>';
 
             if (product.nutriments) {
-                resultHtml += "<h4>Nutritional Information:</h4><ul>";
+                resultHtml += `<h4>Informazioni Nutrizionali:</h4><ul>`;
                 if (product.nutriments.energy_kcal) {
-                    resultHtml += `<li>Energy: ${product.nutriments.energy_kcal} kcal</li>`;
+                    resultHtml += `<li>Energia: ${product.nutriments.energy_kcal} kcal</li>`;
                 }
                 if (product.nutriments.fat) {
-                    resultHtml += `<li>Fat: ${product.nutriments.fat} g</li>`;
+                    resultHtml += `<li>Grassi: ${product.nutriments.fat} g</li>`;
                 }
                 if (product.nutriments.sugars) {
-                    resultHtml += `<li>Sugars: ${product.nutriments.sugars} g</li>`;
+                    resultHtml += `<li>Zuccheri: ${product.nutriments.sugars} g</li>`;
                 }
                 if (product.nutriments.salt) {
-                    resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
+                    resultHtml += `<li>Sodio: ${product.nutriments.salt} g</li>`;
                 }
-                resultHtml += "</ul>";
+                resultHtml += '</ul>';
             }
 
-            document.getElementById("result").innerHTML = resultHtml;
+            document.getElementById('productInfo').innerHTML = resultHtml;
         }
 
+        document.getElementById('scanButton').addEventListener('click', () => {
+            document.getElementById('barcodeInput').click();
+        });
 
-        function analyzeRisks(ingredients) {
-            const risks = [];
-            ingredients.forEach(ingredient => {
-                const lowerIngredient = ingredient.toLowerCase();
-                if (RISKY_INGREDIENTS[lowerIngredient]) {
-                    risks.push({
-                        ingredient: ingredient,
-                        risk: RISKY_INGREDIENTS[lowerIngredient]
-                    });
-                }
-            });
-            return risks;
-        }
+        document.getElementById('barcodeInput').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const barcodeImage = e.target.result;
+                    const barcode = '123456789012';
+                    fetchProductData(barcode);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
     </script>
 </body>
 </html>
