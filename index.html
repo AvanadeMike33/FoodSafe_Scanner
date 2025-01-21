@@ -133,6 +133,8 @@
     </div>
 
     <script>
+        let scanner;
+
         function fetchProductData(barcode) {
             document.getElementById('result').style.display = 'block';
             document.getElementById('loading').style.display = 'block';
@@ -219,9 +221,32 @@
             document.getElementById('productInfo').innerHTML = resultHtml;
         }
 
+        function startScanner() {
+            scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
+            scanner.addListener('scan', function(content) {
+                const barcode = content;
+                fetchProductData(barcode);
+            });
+
+            Instascan.Camera.getCameras().then(function(cameras) {
+                if (cameras.length > 0) {
+                    scanner.start(cameras[0]);
+                } else {
+                    document.getElementById('feedback').innerHTML = 'Nessuna fotocamera trovata.';
+                }
+            }).catch(function(e) {
+                document.getElementById('feedback').innerHTML = 'Errore nella scansione.';
+            });
+        }
+
         document.getElementById('scanButton').addEventListener('click', () => {
-            alert('La funzionalità di scansione in tempo reale non è implementata in questo esempio. Utilizza una libreria come zxing per la scansione del codice a barre.');
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            startScanner();
         });
     </script>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/instascan@1.0.0/instascan.min.js"></script>
 </body>
 </html>
