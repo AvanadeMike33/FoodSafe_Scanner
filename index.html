@@ -171,7 +171,8 @@
             });
         }
 
-        function fetchProductData(barcode) {
+ 
+    function fetchProductData(barcode) {
             const openFoodFactsUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
 
             fetch(openFoodFactsUrl)
@@ -180,12 +181,28 @@
                     if (data.status === 1) {
                         displayProductInfo(data.product);
                     } else {
-                        document.getElementById("feedback").innerHTML = "Product not found!";
+                        document.getElementById("feedback").innerHTML = "Failed to fetch product data!";
+                        fetchProductFromOtherApis(barcode);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     document.getElementById("feedback").innerHTML = "Failed to fetch product data!";
+                    fetchProductFromOtherApis(barcode);
+                });
+        }
+
+        function fetchProductFromOtherApis(barcode) {
+            // Example for Yuka API integration:
+            const yukaApiUrl = `https://api.yuka.io/v1/product/${barcode}`;
+            fetch(yukaApiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.product) {
+                        displayProductInfo(data.product);
+                    } else {
+                        document.getElementById("feedback").innerHTML = "Failed to fetch product data!";
+                    }
                 });
         }
 
@@ -227,6 +244,16 @@
                 if (product.nutriments.salt) {
                     resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
                 }
+
+             if (product.ingredients_text && /aspartame|acrylamide|BHA|BHT/i.test(product.ingredients_text)) {
+                resultHtml += `<p><strong>${product.cancer_warning}</strong></p>`;
+            }
+
+            // Add OpenAI suggestion
+            if (product.nutriments) {
+                resultHtml += `<p><strong>${product.openai_suggestion}</strong> based on 2% of daily intake recommendation.</p>`;
+            }
+
                 resultHtml += "</ul>";
             }
 
