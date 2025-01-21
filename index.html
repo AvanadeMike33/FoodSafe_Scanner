@@ -61,7 +61,7 @@
 
         #barcode-scanner {
             width: 100%;
-            height: 100vh;
+            height: 100vh; /* Full screen */
             background-color: #333;
             margin-top: 20px;
             display: none; /* Initially hidden */
@@ -131,7 +131,8 @@
         let quaggaInitialized = false;
 
         function startScanner() {
-            document.getElementById("barcode-scanner").style.display = "block";  // Show camera
+            // Show the camera
+            document.getElementById("barcode-scanner").style.display = "block";
             document.getElementById("feedback").innerHTML = "Scanner is starting...";
 
             // Initialize QuaggaJS for barcode scanning
@@ -163,8 +164,10 @@
                 lastScannedBarcode = result.codeResult.code;
                 document.getElementById("feedback").innerHTML = "Barcode detected: " + lastScannedBarcode;
                 fetchProductData(lastScannedBarcode);
-                document.getElementById("barcode-scanner").style.display = "none";  // Hide camera after scan
-                document.getElementById("result").style.display = "block";  // Show result
+                // Hide camera after scan
+                document.getElementById("barcode-scanner").style.display = "none";  
+                // Show the result
+                document.getElementById("result").style.display = "block"; 
             });
         }
 
