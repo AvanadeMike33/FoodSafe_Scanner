@@ -184,6 +184,17 @@
         let lastScannedBarcode = null;
         let quaggaInitialized = false;
 
+        // Screen size check and alert message
+        window.onload = function() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+
+            // Check if screen size is not standard for a smartphone
+            if (screenWidth < 320 || screenWidth > 800 || screenHeight < 480 || screenHeight > 1200) {
+                alert("Please use your mobile phone to use this app.");
+            }
+        };
+
         function startScanner() {
             // Hide all elements except the scanner
             document.querySelector("h1").style.display = "none";  // Hide heading
