@@ -14,15 +14,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             height: 100vh;
-            background-color: #f0f0f0;
+            background-color: #f9f9f9;
         }
 
         h1 {
             color: #333;
             margin: 20px 0;
-            font-size: 24px;
         }
 
         .scanner-container {
@@ -30,22 +29,26 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 80%;
-            max-width: 400px;
+            width: 90%;
+            max-width: 350px;
             text-align: center;
             position: relative;
+            margin-top: 20px;
         }
 
         button {
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 12px;
+            padding: 15px;
             font-size: 16px;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             margin-top: 20px;
             width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         button i {
@@ -58,10 +61,10 @@
 
         #barcode-scanner {
             width: 100%;
-            height: 100vh;
+            height: 100vh; /* Full screen */
             background-color: #333;
             margin-top: 20px;
-            display: none;
+            display: none; /* Initially hidden */
         }
 
         #result {
@@ -70,26 +73,23 @@
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             margin-top: 30px;
-            width: 80%;
-            max-width: 400px;
-            display: none;
+            width: 90%;
+            max-width: 350px;
+            text-align: left;
+            display: none; /* Hidden until scanning is complete */
         }
 
-        h3 {
+        h3, h4 {
             color: #333;
-            font-size: 20px;
-            margin-bottom: 15px;
         }
 
         ul {
             list-style-type: none;
             padding: 0;
-            margin: 0;
         }
 
         li {
             margin: 5px 0;
-            font-size: 14px;
         }
 
         .ingredient-risk {
@@ -105,12 +105,11 @@
     </style>
 </head>
 <body>
-
     <h1>Scan a Product Barcode</h1>
 
     <div class="scanner-container">
         <button onclick="startScanner()">
-            <i class="fas fa-barcode"></i> Start Scanning
+            <i class="fas fa-barcode" style="font-size: 30px; color: #fff;"></i> Start Scanning
         </button>
         <div id="barcode-scanner"></div>
         <div id="feedback"></div>
@@ -126,6 +125,13 @@
             "acrylamide": "Classified as a carcinogen, linked to increased cancer risk.",
             "monosodium glutamate": "Can cause headaches and other adverse reactions.",
             "salt": "Excessive consumption of salt can lead to high blood pressure, increased risk of heart disease, stroke, kidney disease, and headaches due to dehydration."
+        };
+
+        const DAILY_LIMITS = {
+            calories: 2000,  // Daily calorie intake
+            fat: 70,         // grams
+            sugar: 90,       // grams
+            salt: 6          // grams
         };
 
         let lastScannedBarcode = null;
@@ -191,7 +197,7 @@
         }
 
         function displayProductInfo(product) {
-            let resultHtml = `<h3>${product.product_name || "Unknown Product"}</h3>`;
+            let resultHtml = `<h3>Product: ${product.product_name || "Unknown"}</h3>`;
             resultHtml += "<h4>Ingredients:</h4><ul>";
 
             if (product.ingredients_text) {
@@ -229,6 +235,10 @@
                     resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
                 }
                 resultHtml += "</ul>";
+
+                // AI-like suggestion for daily intake
+                resultHtml += "<h4>Suggested Daily Intake:</h4>";
+                resultHtml += getDailyIntakeSuggestions(product.nutriments);
             }
 
             document.getElementById("result").innerHTML = resultHtml;
@@ -246,6 +256,37 @@
                 }
             });
             return risks;
+        }
+
+        // Function to generate daily intake suggestions
+        function getDailyIntakeSuggestions(nutriments) {
+            let suggestions = "";
+            
+            // Calorie suggestion
+            if (nutriments.energy_kcal) {
+                const servingsForCalories = (DAILY_LIMITS.calories / nutriments.energy_kcal).toFixed(2);
+                suggestions += `<p>Based on your daily calorie intake, you can consume up to ${servingsForCalories} servings of this product.</p>`;
+            }
+
+            // Salt suggestion
+            if (nutriments.salt) {
+                const servingsForSalt = (DAILY_LIMITS.salt / nutriments.salt).toFixed(2);
+                suggestions += `<p>To stay within the recommended salt intake, limit yourself to ${servingsForSalt} servings of this product.</p>`;
+            }
+
+            // Fat suggestion
+            if (nutriments.fat) {
+                const servingsForFat = (DAILY_LIMITS.fat / nutriments.fat).toFixed(2);
+                suggestions += `<p>To maintain a healthy fat intake, you should consume no more than ${servingsForFat} servings of this product.</p>`;
+            }
+
+            // Sugar suggestion
+            if (nutriments.sugars) {
+                const servingsForSugar = (DAILY_LIMITS.sugar / nutriments.sugars).toFixed(2);
+                suggestions += `<p>To keep your sugar intake in check, you can have up to ${servingsForSugar} servings of this product.</p>`;
+            }
+
+            return suggestions;
         }
     </script>
 </body>
