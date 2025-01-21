@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Product Scanner</title>
+    <title>Barcode Product Analyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f9f9f9;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -17,62 +18,58 @@
             height: 100vh;
         }
 
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            width: 100%;
-            text-align: center;
+        h1 {
+            color: #333;
+            margin: 20px 0;
         }
 
         .scanner-container {
-            margin-top: 20px;
-            position: relative;
-            width: 80%;
-            max-width: 600px;
             background-color: white;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 350px;
             text-align: center;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #45a049;
         }
 
         #barcode-scanner {
             width: 100%;
             height: 300px;
-            border-radius: 10px;
+            border-radius: 12px;
             background-color: #333;
-        }
-
-        .btn {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 8px;
             margin-top: 20px;
-            width: 100%;
-            max-width: 250px;
-        }
-
-        .btn:hover {
-            background-color: #45a049;
         }
 
         #result {
-            margin-top: 20px;
-            padding: 20px;
             background-color: white;
-            border-radius: 10px;
+            padding: 20px;
+            border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 600px;
+            margin-top: 30px;
+            width: 90%;
+            max-width: 350px;
+            text-align: left;
         }
 
         h3, h4 {
-            margin: 10px 0;
+            color: #333;
         }
 
         ul {
@@ -81,30 +78,32 @@
         }
 
         li {
-            padding: 5px 0;
+            margin: 5px 0;
         }
 
         .ingredient-risk {
             color: red;
             font-weight: bold;
         }
+
+        #feedback {
+            margin-top: 15px;
+            color: #888;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-
-    <header>
-        <h1>Food Product Scanner</h1>
-        <p>Scan a barcode to analyze product ingredients and nutrition.</p>
-    </header>
-
+    <h1>Scan a Product Barcode</h1>
+    
     <div class="scanner-container">
-        <button class="btn" onclick="startScanner()">Start Scanning</button>
-        <video id="barcode-scanner"></video>
+        <button onclick="startScanner()">Start Scanning</button>
+        <div id="barcode-scanner"></div>
+        <div id="feedback"></div> <!-- Feedback for debugging -->
     </div>
 
     <div id="result"></div>
 
-    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
     <script>
         const RISKY_INGREDIENTS = {
             "aspartame": "May cause allergic reactions and has potential brain effects.",
@@ -116,78 +115,70 @@
         };
 
         function startScanner() {
+            document.getElementById("feedback").innerHTML = "Scanner is starting...";
+
+            // Initialize QuaggaJS for barcode scanning
             Quagga.init({
                 inputStream: {
                     name: "Live",
                     type: "LiveStream",
                     target: document.querySelector('#barcode-scanner'),
                     constraints: {
-                        facingMode: "environment"
+                        facingMode: "environment" // Use the rear camera
                     }
                 },
                 decoder: {
-                    readers: ["ean_reader", "upc_reader"]
+                    readers: ["ean_reader", "upc_reader"] // Add other readers if needed
                 }
             }, function(err) {
                 if (err) {
                     console.log(err);
+                    document.getElementById("feedback").innerHTML = "Error initializing scanner: " + err;
                     return;
                 }
                 Quagga.start();
+                document.getElementById("feedback").innerHTML = "Scanner started. Please scan a barcode.";
             });
 
+            // Handle barcode detection
             Quagga.onDetected(function(result) {
                 const barcode = result.codeResult.code;
-                alert("Barcode detected: " + barcode);
+                document.getElementById("feedback").innerHTML = "Barcode detected: " + barcode;
                 fetchProductData(barcode);
             });
         }
 
         function fetchProductData(barcode) {
-            const openFoodFactsApiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
-            const yukaApiUrl = `https://api.yuka.io/v1/product/${barcode}`;
-            const edamamApiUrl = `https://api.edamam.com/api/food-database/v2/parser?app_id=YOUR_APP_ID&app_key=YOUR_APP_KEY&ingr=${barcode}`;
+            const apiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;  // Open Food Facts API
 
-            Promise.all([
-                fetch(openFoodFactsApiUrl).then(response => response.json()),
-                fetch(yukaApiUrl).then(response => response.json()),
-                fetch(edamamApiUrl).then(response => response.json())
-            ])
-            .then(([openFoodFactsData, yukaData, edamamData]) => {
-                if (openFoodFactsData.status === 1) {
-                    displayProductInfo(openFoodFactsData.product, 'Open Food Facts');
-                } else {
-                    alert('Product not found in Open Food Facts!');
-                }
-
-                if (yukaData && yukaData.product) {
-                    displayProductInfo(yukaData.product, 'Yuka');
-                } else {
-                    alert('Product not found in Yuka!');
-                }
-
-                if (edamamData && edamamData.parsed) {
-                    displayProductInfo(edamamData.parsed[0], 'Edamam');
-                } else {
-                    alert('Product not found in Edamam!');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to fetch product data from APIs!');
-            });
+            // Fetch product data from Open Food Facts API
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 1) {
+                        displayProductInfo(data.product);
+                    } else {
+                        document.getElementById("feedback").innerHTML = "Product not found!";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById("feedback").innerHTML = "Failed to fetch product data!";
+                });
         }
 
-        function displayProductInfo(product, source) {
-            let resultHtml = `<h3>Product (from ${source}): ${product.product_name || "Unknown"}</h3>`;
+        function displayProductInfo(product) {
+            let resultHtml = `<h3>Product: ${product.product_name || "Unknown"}</h3>`;
             resultHtml += "<h4>Ingredients:</h4><ul>";
-
+            
+            // Display ingredients (if available)
             if (product.ingredients_text) {
                 const ingredients = product.ingredients_text.split(",").map(ingredient => ingredient.trim());
                 ingredients.forEach(ingredient => {
                     resultHtml += `<li>${ingredient}</li>`;
                 });
 
+                // Analyze risky ingredients
                 const riskyIngredients = analyzeRisks(ingredients);
                 if (riskyIngredients.length > 0) {
                     resultHtml += "<h4>Risky Ingredients:</h4><ul>";
@@ -201,9 +192,10 @@
             } else {
                 resultHtml += "<li>No ingredients listed.</li>";
             }
-
+            
             resultHtml += "</ul>";
 
+            // Display nutritional information (if available)
             if (product.nutriments) {
                 resultHtml += "<h4>Nutritional Information:</h4><ul>";
                 if (product.nutriments.energy_kcal) {
@@ -224,6 +216,7 @@
             document.getElementById("result").innerHTML = resultHtml;
         }
 
+        // Function to analyze risky ingredients
         function analyzeRisks(ingredients) {
             const risks = [];
             ingredients.forEach(ingredient => {
