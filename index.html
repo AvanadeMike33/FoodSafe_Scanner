@@ -176,6 +176,8 @@
         };
 
         let currentLanguage = 'en'; // default language
+        let lastScannedBarcode = null;
+        let quaggaInitialized = false;
 
         function toggleLanguage() {
             currentLanguage = currentLanguage === 'en' ? 'it' : 'en';
@@ -183,9 +185,11 @@
             fetchProductData(lastScannedBarcode); // Update display when switching language
         }
 
-        let lastScannedBarcode = null;
-
         function startScanner() {
+            if (quaggaInitialized) {
+                Quagga.stop();  // Stop any active scanner session
+            }
+
             document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].scanner_starting;
 
             Quagga.init({
@@ -207,6 +211,7 @@
                     return;
                 }
                 Quagga.start();
+                quaggaInitialized = true;
                 document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].scanner_started;
             });
 
