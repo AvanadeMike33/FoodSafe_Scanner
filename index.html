@@ -272,6 +272,31 @@
             return caloriesFromFat + caloriesFromSugar + caloriesFromSalt;
         }
 
+        function calculateRecommendedPortion(product) {
+            // Calculate portion size based on calories and daily recommendations
+            const caloriesPerPortion = product.nutriments.energy_kcal || 0;
+            const portionBasedOnCalories = DAILY_RECOMMENDATIONS.calories / caloriesPerPortion;
+            
+            // Provide a basic recommendation on how much of the product to consume based on calories
+            let recommendedPortionMessage = "";
+            if (caloriesPerPortion > 0) {
+                recommendedPortionMessage = `You could consume approximately ${Math.round(portionBasedOnCalories)} portions of this product to meet your daily calorie intake. `;
+            }
+
+            // Recommendations based on fat, sugar, and salt
+            const recommendedFatPortion = DAILY_RECOMMENDATIONS.fat / (product.nutriments.fat || 1);
+            const recommendedSugarPortion = DAILY_RECOMMENDATIONS.sugar / (product.nutriments.sugars || 1);
+            const recommendedSaltPortion = DAILY_RECOMMENDATIONS.salt / (product.nutriments.salt || 1);
+
+            recommendedPortionMessage += `To stay healthy, avoid exceeding daily limits of fats, sugars, and salt. 
+
+            - You can safely consume up to ${Math.round(recommendedFatPortion)} portions based on fat.
+            - You can safely consume up to ${Math.round(recommendedSugarPortion)} portions based on sugars.
+            - You can safely consume up to ${Math.round(recommendedSaltPortion)} portions based on salt.`;
+
+            return recommendedPortionMessage;
+        }
+
         function displayProductInfo(product) {
             let resultHtml = `<h3>${product.product_name || "Unknown Product"}</h3>`;
             resultHtml += "<h4>Ingredients:</h4><ul>";
@@ -320,17 +345,11 @@
                 if (product.nutriments.salt) {
                     resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
                 }
-
-                // Add Daily Recommendations section
-                resultHtml += "<h4>Daily Nutritional Recommendations:</h4>";
-                resultHtml += `<ul>
-                                <li>Calories: ${DAILY_RECOMMENDATIONS.calories} kcal</li>
-                                <li>Fat: ${DAILY_RECOMMENDATIONS.fat} g</li>
-                                <li>Sugars: ${DAILY_RECOMMENDATIONS.sugar} g</li>
-                                <li>Salt: ${DAILY_RECOMMENDATIONS.salt} g</li>
-                              </ul>`;
-
                 resultHtml += "</ul>";
+
+                // Provide the recommended portion
+                const recommendedPortion = calculateRecommendedPortion(product);
+                resultHtml += `<p><strong>Health Tip:</strong> ${recommendedPortion}</p>`;
             }
 
             document.getElementById("result").innerHTML = resultHtml;
