@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barcode Product Analyzer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -43,6 +44,13 @@
             cursor: pointer;
             margin-top: 20px;
             width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button i {
+            margin-right: 10px;
         }
 
         button:hover {
@@ -91,13 +99,26 @@
             color: #888;
             font-size: 14px;
         }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .scanner-container, #result {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
     <h1>Scan a Product Barcode</h1>
     
     <div class="scanner-container">
-        <button onclick="startScanner()">Start Scanning</button>
+        <button onclick="startScanner()">
+            <i class="fas fa-barcode"></i> Start Scanning
+        </button>
         <div id="barcode-scanner"></div>
         <div id="feedback"></div> <!-- Feedback for debugging -->
     </div>
@@ -114,10 +135,40 @@
             "salt": "Excessive consumption of salt can lead to high blood pressure, increased risk of heart disease, stroke, kidney disease, and headaches due to dehydration."
         };
 
-        function startScanner() {
-            document.getElementById("feedback").innerHTML = "Scanner is starting...";
+        const LANGUAGES = {
+            en: {
+                scanner_starting: "Scanner is starting...",
+                scanner_started: "Scanner started. Please scan a barcode.",
+                product_not_found: "Product not found!",
+                failed_to_fetch: "Failed to fetch product data!",
+                risky_ingredients: "Risky Ingredients",
+                no_risky_ingredients: "No risky ingredients found.",
+                energy: "Energy",
+                fat: "Fat",
+                sugars: "Sugars",
+                salt: "Salt",
+                daily_intake: "Recommended Daily Intake",
+            },
+            it: {
+                scanner_starting: "Scanner in avvio...",
+                scanner_started: "Scanner avviato. Per favore scansiona un codice a barre.",
+                product_not_found: "Prodotto non trovato!",
+                failed_to_fetch: "Impossibile recuperare i dati del prodotto!",
+                risky_ingredients: "Ingredienti a rischio",
+                no_risky_ingredients: "Nessun ingrediente a rischio trovato.",
+                energy: "Energia",
+                fat: "Grassi",
+                sugars: "Zuccheri",
+                salt: "Sale",
+                daily_intake: "Assunzione Giornaliera Raccomandata",
+            }
+        };
 
-            // Initialize QuaggaJS for barcode scanning
+        let currentLanguage = 'en'; // default language
+
+        function startScanner() {
+            document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].scanner_starting;
+
             Quagga.init({
                 inputStream: {
                     name: "Live",
@@ -128,19 +179,18 @@
                     }
                 },
                 decoder: {
-                    readers: ["ean_reader", "upc_reader"] // Add other readers if needed
+                    readers: ["ean_reader", "upc_reader"]
                 }
             }, function(err) {
                 if (err) {
                     console.log(err);
-                    document.getElementById("feedback").innerHTML = "Error initializing scanner: " + err;
+                    document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].failed_to_fetch + " " + err;
                     return;
                 }
                 Quagga.start();
-                document.getElementById("feedback").innerHTML = "Scanner started. Please scan a barcode.";
+                document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].scanner_started;
             });
 
-            // Handle barcode detection
             Quagga.onDetected(function(result) {
                 const barcode = result.codeResult.code;
                 document.getElementById("feedback").innerHTML = "Barcode detected: " + barcode;
@@ -149,74 +199,72 @@
         }
 
         function fetchProductData(barcode) {
-            const apiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;  // Open Food Facts API
+            const openFoodFactsUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
 
-            // Fetch product data from Open Food Facts API
-            fetch(apiUrl)
+            fetch(openFoodFactsUrl)
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 1) {
                         displayProductInfo(data.product);
                     } else {
-                        document.getElementById("feedback").innerHTML = "Product not found!";
+                        document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].product_not_found;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById("feedback").innerHTML = "Failed to fetch product data!";
+                    document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].failed_to_fetch;
                 });
         }
 
         function displayProductInfo(product) {
             let resultHtml = `<h3>Product: ${product.product_name || "Unknown"}</h3>`;
-            resultHtml += "<h4>Ingredients:</h4><ul>";
-            
-            // Display ingredients (if available)
+            resultHtml += "<h4>" + LANGUAGES[currentLanguage].risky_ingredients + ":</h4><ul>";
+
             if (product.ingredients_text) {
                 const ingredients = product.ingredients_text.split(",").map(ingredient => ingredient.trim());
                 ingredients.forEach(ingredient => {
                     resultHtml += `<li>${ingredient}</li>`;
                 });
 
-                // Analyze risky ingredients
                 const riskyIngredients = analyzeRisks(ingredients);
                 if (riskyIngredients.length > 0) {
-                    resultHtml += "<h4>Risky Ingredients:</h4><ul>";
+                    resultHtml += "<h4>" + LANGUAGES[currentLanguage].risky_ingredients + ":</h4><ul>";
                     riskyIngredients.forEach(risk => {
                         resultHtml += `<li class="ingredient-risk"><strong>${risk.ingredient}</strong>: ${risk.risk}</li>`;
                     });
                     resultHtml += "</ul>";
                 } else {
-                    resultHtml += "<p>No risky ingredients found.</p>";
+                    resultHtml += "<p>" + LANGUAGES[currentLanguage].no_risky_ingredients + "</p>";
                 }
             } else {
                 resultHtml += "<li>No ingredients listed.</li>";
             }
-            
-            resultHtml += "</ul>";
 
-            // Display nutritional information (if available)
             if (product.nutriments) {
-                resultHtml += "<h4>Nutritional Information:</h4><ul>";
+                resultHtml += "<h4>" + LANGUAGES[currentLanguage].energy + ":</h4><ul>";
                 if (product.nutriments.energy_kcal) {
-                    resultHtml += `<li>Energy: ${product.nutriments.energy_kcal} kcal</li>`;
+                    resultHtml += `<li>${LANGUAGES[currentLanguage].energy}: ${product.nutriments.energy_kcal} kcal</li>`;
                 }
                 if (product.nutriments.fat) {
-                    resultHtml += `<li>Fat: ${product.nutriments.fat} g</li>`;
+                    resultHtml += `<li>${LANGUAGES[currentLanguage].fat}: ${product.nutriments.fat} g</li>`;
                 }
                 if (product.nutriments.sugars) {
-                    resultHtml += `<li>Sugars: ${product.nutriments.sugars} g</li>`;
+                    resultHtml += `<li>${LANGUAGES[currentLanguage].sugars}: ${product.nutriments.sugars} g</li>`;
                 }
                 if (product.nutriments.salt) {
-                    resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
+                    resultHtml += `<li>${LANGUAGES[currentLanguage].salt}: ${product.nutriments.salt} g</li>`;
                 }
                 resultHtml += "</ul>";
+            }
+
+            // Add daily intake information if available
+            if (product.nutriments && product.nutriments.energy_kcal) {
+                resultHtml += `<p><strong>${LANGUAGES[currentLanguage].daily_intake}:</strong> ${product.nutriments.energy_kcal * 0.02} kcal/day (based on standard recommendations)</p>`;
             }
 
             document.getElementById("result").innerHTML = resultHtml;
         }
 
-        // Function to analyze risky ingredients
         function analyzeRisks(ingredients) {
             const risks = [];
             ingredients.forEach(ingredient => {
