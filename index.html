@@ -1,156 +1,147 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Prodotti Alimentari</title>
+    <title>Food Product Scanner</title>
     <style>
-        * {
+        body {
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            color: #4CAF50;
-        }
-
-        p {
-            font-size: 1.1rem;
-            color: #777;
-        }
-
-        .scan-section {
+            background-color: #f4f4f4;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 30px;
+            justify-content: center;
+            height: 100vh;
         }
 
-        .scan-btn {
+        header {
             background-color: #4CAF50;
             color: white;
-            font-size: 1.2rem;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: background-color 0.3s ease;
-        }
-
-        .scan-btn:hover {
-            background-color: #45a049;
-        }
-
-        #feedback {
-            margin-top: 10px;
-            font-size: 1rem;
-            color: #FF5722;
-        }
-
-        .result-section {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .loading {
-            font-size: 1.5rem;
-            color: #4CAF50;
+            padding: 15px;
+            width: 100%;
             text-align: center;
         }
 
-        .product-info {
-            background-color: #ffffff;
+        .scanner-container {
+            margin-top: 20px;
+            position: relative;
+            width: 80%;
+            max-width: 600px;
+            background-color: white;
             padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #barcode-scanner {
+            width: 100%;
+            height: 300px;
+            border-radius: 10px;
+        }
+
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            cursor: pointer;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 100%;
+            max-width: 250px;
         }
 
-        .product-info h3 {
-            color: #333;
-            font-size: 1.8rem;
+        .btn:hover {
+            background-color: #45a049;
         }
 
-        .product-info h4 {
-            color: #4CAF50;
-            font-size: 1.4rem;
-            margin-top: 10px;
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
         }
 
-        .product-info ul {
+        h3, h4 {
+            margin: 10px 0;
+        }
+
+        ul {
             list-style-type: none;
             padding: 0;
         }
 
-        .product-info li {
-            font-size: 1.1rem;
-            margin-bottom: 8px;
+        li {
+            padding: 5px 0;
         }
 
-        #preview {
-            width: 100%;
-            max-width: 400px;
-            height: 300px;
-            border: 1px solid #ddd;
-            margin: 20px 0;
+        .ingredient-risk {
+            color: red;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Scanner Prodotti Alimentari</h1>
-            <p>Scansiona il codice a barre per scoprire se il prodotto è nocivo.</p>
-        </header>
 
-        <div class="scan-section">
-            <button id="scanButton" class="scan-btn">
-                <img src="https://img.icons8.com/ios/50/000000/barcode-scanner.png" alt="Scansiona Barcode">
-                <span>Scansiona Barcode</span>
-            </button>
-            <div id="feedback" class="feedback"></div>
-        </div>
+    <header>
+        <h1>Food Product Scanner</h1>
+        <p>Scan a barcode to analyze product ingredients and nutrition.</p>
+    </header>
 
-        <div id="result" class="result-section">
-            <div id="loading" class="loading">Caricamento...</div>
-            <div id="productInfo" class="product-info"></div>
-        </div>
-
-        <video id="preview"></video>
+    <div class="scanner-container">
+        <button class="btn" onclick="startScanner()">Start Scanning</button>
+        <video id="barcode-scanner"></video>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/instascan@1.0.0/instascan.min.js"></script>
+    <div id="result"></div>
+
+    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
     <script>
-        let scanner;
+        const RISKY_INGREDIENTS = {
+            "aspartame": "May cause allergic reactions and has potential brain effects.",
+            "BHA": "Potential carcinogen linked to liver and kidney damage.",
+            "BHT": "Potential carcinogen that can alter metabolism.",
+            "acrylamide": "Classified as a carcinogen, linked to increased cancer risk.",
+            "monosodium glutamate": "Can cause headaches and other adverse reactions.",
+            "salt": "Excessive consumption of salt can lead to high blood pressure, increased risk of heart disease, stroke, kidney disease, and headaches due to dehydration."
+        };
+
+        function startScanner() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#barcode-scanner'),
+                    constraints: {
+                        facingMode: "environment"
+                    }
+                },
+                decoder: {
+                    readers: ["ean_reader", "upc_reader"]
+                }
+            }, function(err) {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function(result) {
+                const barcode = result.codeResult.code;
+                alert("Barcode detected: " + barcode);
+                fetchProductData(barcode);
+            });
+        }
 
         function fetchProductData(barcode) {
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('productInfo').innerHTML = '';
-
             const openFoodFactsApiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
             const yukaApiUrl = `https://api.yuka.io/v1/product/${barcode}`;
             const edamamApiUrl = `https://api.edamam.com/api/food-database/v2/parser?app_id=YOUR_APP_ID&app_key=YOUR_APP_KEY&ingr=${barcode}`;
@@ -160,102 +151,90 @@
                 fetch(yukaApiUrl).then(response => response.json()),
                 fetch(edamamApiUrl).then(response => response.json())
             ])
-            .then(results => {
-                let productFound = false;
-                let productInfo = {};
-
-                const openFoodFactsData = results[0];
+            .then(([openFoodFactsData, yukaData, edamamData]) => {
                 if (openFoodFactsData.status === 1) {
-                    productFound = true;
-                    productInfo = openFoodFactsData.product;
-                }
-
-                const yukaData = results[1];
-                if (yukaData && yukaData.product) {
-                    productFound = true;
-                    productInfo = yukaData.product;
-                }
-
-                const edamamData = results[2];
-                if (edamamData && edamamData.foods && edamamData.foods.length > 0) {
-                    productFound = true;
-                    productInfo = edamamData.foods[0];
-                }
-
-                if (productFound) {
-                    displayProductInfo(productInfo);
+                    displayProductInfo(openFoodFactsData.product, 'Open Food Facts');
                 } else {
-                    document.getElementById('feedback').innerHTML = 'Prodotto non trovato.';
+                    alert('Product not found in Open Food Facts!');
                 }
 
-                document.getElementById('loading').style.display = 'none';
+                if (yukaData && yukaData.product) {
+                    displayProductInfo(yukaData.product, 'Yuka');
+                } else {
+                    alert('Product not found in Yuka!');
+                }
+
+                if (edamamData && edamamData.parsed) {
+                    displayProductInfo(edamamData.parsed[0], 'Edamam');
+                } else {
+                    alert('Product not found in Edamam!');
+                }
             })
             .catch(error => {
-                console.error('Errore API:', error);
-                document.getElementById('feedback').innerHTML = 'Errore nel recupero dei dati.';
-                document.getElementById('loading').style.display = 'none';
+                console.error('Error:', error);
+                alert('Failed to fetch product data from APIs!');
             });
         }
 
-        function displayProductInfo(product) {
-            let resultHtml = `<h3>${product.product_name || 'Prodotto sconosciuto'}</h3>`;
-            resultHtml += `<h4>Ingredienti:</h4><ul>`;
+        function displayProductInfo(product, source) {
+            let resultHtml = `<h3>Product (from ${source}): ${product.product_name || "Unknown"}</h3>`;
+            resultHtml += "<h4>Ingredients:</h4><ul>";
 
             if (product.ingredients_text) {
-                const ingredients = product.ingredients_text.split(',').map(ingredient => ingredient.trim());
+                const ingredients = product.ingredients_text.split(",").map(ingredient => ingredient.trim());
                 ingredients.forEach(ingredient => {
                     resultHtml += `<li>${ingredient}</li>`;
                 });
+
+                const riskyIngredients = analyzeRisks(ingredients);
+                if (riskyIngredients.length > 0) {
+                    resultHtml += "<h4>Risky Ingredients:</h4><ul>";
+                    riskyIngredients.forEach(risk => {
+                        resultHtml += `<li class="ingredient-risk"><strong>${risk.ingredient}</strong>: ${risk.risk}</li>`;
+                    });
+                    resultHtml += "</ul>";
+                } else {
+                    resultHtml += "<p>No risky ingredients found.</p>";
+                }
             } else {
-                resultHtml += '<li>Ingredienti non disponibili</li>';
+                resultHtml += "<li>No ingredients listed.</li>";
             }
 
-            resultHtml += '</ul>';
+            resultHtml += "</ul>";
 
             if (product.nutriments) {
-                resultHtml += `<h4>Informazioni Nutrizionali:</h4><ul>`;
+                resultHtml += "<h4>Nutritional Information:</h4><ul>";
                 if (product.nutriments.energy_kcal) {
-                    resultHtml += `<li>Energia: ${product.nutriments.energy_kcal} kcal</li>`;
+                    resultHtml += `<li>Energy: ${product.nutriments.energy_kcal} kcal</li>`;
                 }
                 if (product.nutriments.fat) {
-                    resultHtml += `<li>Grassi: ${product.nutriments.fat} g</li>`;
+                    resultHtml += `<li>Fat: ${product.nutriments.fat} g</li>`;
                 }
                 if (product.nutriments.sugars) {
-                    resultHtml += `<li>Zuccheri: ${product.nutriments.sugars} g</li>`;
+                    resultHtml += `<li>Sugars: ${product.nutriments.sugars} g</li>`;
                 }
                 if (product.nutriments.salt) {
-                    resultHtml += `<li>Sodio: ${product.nutriments.salt} g</li>`;
+                    resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
                 }
-                resultHtml += '</ul>';
+                resultHtml += "</ul>";
             }
 
-            document.getElementById('productInfo').innerHTML = resultHtml;
+            document.getElementById("result").innerHTML = resultHtml;
         }
 
-        function startScanner() {
-            scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
-            scanner.addListener('scan', function(content) {
-                const barcode = content;
-                fetchProductData(barcode);
-            });
-
-            Instascan.Camera.getCameras().then(function(cameras) {
-                if (cameras.length > 0) {
-                    scanner.start(cameras[0]);
-                } else {
-                    document.getElementById('feedback').innerHTML = 'Nessuna fotocamera trovata.';
+        function analyzeRisks(ingredients) {
+            const risks = [];
+            ingredients.forEach(ingredient => {
+                const lowerIngredient = ingredient.toLowerCase();
+                if (RISKY_INGREDIENTS[lowerIngredient]) {
+                    risks.push({
+                        ingredient: ingredient,
+                        risk: RISKY_INGREDIENTS[lowerIngredient]
+                    });
                 }
-            }).catch(function(e) {
-                document.getElementById('feedback').innerHTML = 'Errore nella scansione.';
             });
+            return risks;
         }
-
-        document.getElementById('scanButton').addEventListener('click', () => {
-            document.getElementById('feedback').innerHTML = '';
-            document.getElementById('result').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
-            startScanner();
-        });
     </script>
 </body>
 </html>
