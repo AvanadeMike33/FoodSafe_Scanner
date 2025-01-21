@@ -7,55 +7,63 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f8f8f8;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             flex-direction: column;
-            overflow-y: auto; /* Allow vertical scrolling */
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+            background-color: #f9f9f9;
         }
 
         h1 {
-            font-size: 24px;
             color: #333;
-            text-align: center;
-            margin: 20px auto;
+            margin: 20px 0;
+        }
+
+        .app-frame {
+            width: 360px;
+            height: 640px;
+            border: 20px solid #333;
+            border-radius: 36px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 20px;
+            position: relative;
         }
 
         .scanner-container {
-            background-color: #fff;
+            background-color: white;
             padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 360px;
             text-align: center;
-            margin-top: 40px;
+            position: relative;
+            margin-top: 20px;
         }
 
         button {
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 16px;
-            font-size: 18px;
-            border-radius: 12px;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 10px;
             cursor: pointer;
+            margin-top: 20px;
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s;
         }
 
         button i {
@@ -68,28 +76,24 @@
 
         #barcode-scanner {
             width: 100%;
-            height: 60vh; /* Reduced height for better scroll space */
+            height: 100vh; /* Full screen */
             background-color: #333;
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
+            margin-top: 20px;
+            display: none; /* Initially hidden */
         }
 
         #result {
-            background-color: #fff;
+            background-color: white;
             padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
             width: 100%;
-            max-width: 360px;
             text-align: left;
-            display: none;
+            display: none; /* Hidden until scanning is complete */
         }
 
         h3, h4 {
-            font-size: 20px;
             color: #333;
         }
 
@@ -99,70 +103,61 @@
         }
 
         li {
-            font-size: 16px;
-            color: #555;
             margin: 5px 0;
         }
 
         .ingredient-risk {
-            color: #e60000;
+            color: red;
             font-weight: bold;
         }
 
         #feedback {
-            margin-top: 20px;
+            margin-top: 15px;
             color: #888;
             font-size: 14px;
         }
 
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 20px;
+        @media (min-width: 768px) {
+            .app-frame {
+                display: none; /* Hide app frame on larger screens */
             }
 
-            button {
-                font-size: 16px;
-                padding: 14px;
+            body {
+                display: block;
+                justify-content: flex-start;
+                padding: 40px;
             }
-
-            #barcode-scanner {
-                height: 50vh; /* Adjust camera height for small screens */
-            }
-
-            #result {
-                max-width: 100%;
-                margin-top: 10px;
-                padding: 15px;
-            }
-
-            h3, h4 {
-                font-size: 18px;
-            }
-
-            li {
-                font-size: 14px;
-            }
-
-            #feedback {
-                font-size: 12px;
-            }
-
         }
 
+        @media (max-width: 767px) {
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f0f0f0;
+            }
+
+            .app-frame {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Scan a Product Barcode</h1>
+    <div class="app-frame">
+        <h1>Scan a Product Barcode</h1>
 
-    <div class="scanner-container">
-        <button onclick="startScanner()">
-            <i class="fas fa-barcode" style="font-size: 30px; color: #fff;"></i> Start Scanning
-        </button>
-        <div id="feedback"></div>
+        <div class="scanner-container">
+            <button onclick="startScanner()">
+                <i class="fas fa-barcode" style="font-size: 30px; color: #fff;"></i> Start Scanning
+            </button>
+            <div id="barcode-scanner"></div>
+            <div id="feedback"></div>
+        </div>
+
+        <div id="result"></div>
     </div>
-
-    <div id="result"></div>
-    <div id="barcode-scanner"></div>
 
     <script>
         const RISKY_INGREDIENTS = {
@@ -178,11 +173,6 @@
         let quaggaInitialized = false;
 
         function startScanner() {
-            // Hide all elements except the scanner
-            document.querySelector("h1").style.display = "none";  // Hide heading
-            document.querySelector(".scanner-container").style.display = "none";  // Hide scanner button
-            document.getElementById("result").style.display = "none";  // Hide result section
-
             // Show the camera
             document.getElementById("barcode-scanner").style.display = "block";
             document.getElementById("feedback").innerHTML = "Scanner is starting...";
@@ -220,8 +210,6 @@
                 document.getElementById("barcode-scanner").style.display = "none";  
                 // Show the result
                 document.getElementById("result").style.display = "block"; 
-                document.querySelector("h1").style.display = "block";  
-                document.querySelector(".scanner-container").style.display = "block";  
             });
         }
 
@@ -234,44 +222,21 @@
                     if (data.status === 1) {
                         displayProductInfo(data.product);
                     } else {
-                        document.getElementById("feedback").innerHTML = "Failed to fetch product data!";
-                        fetchProductFromOtherApis(barcode);
+                        document.getElementById("feedback").innerHTML = "Product not found!";
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     document.getElementById("feedback").innerHTML = "Failed to fetch product data!";
-                    fetchProductFromOtherApis(barcode);
                 });
-        }
-
-        function fetchProductFromOtherApis(barcode) {
-            const yukaApiUrl = `https://api.yuka.io/v1/product/${barcode}`;
-            fetch(yukaApiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.product) {
-                        displayProductInfo(data.product);
-                    } else {
-                        document.getElementById("feedback").innerHTML = "Failed to fetch product data!";
-                    }
-                });
-        }
-
-        function calculateCalories(fat, sugars, salt) {
-            const caloriesFromFat = fat ? fat * 9 : 0;
-            const caloriesFromSugar = sugars ? sugars * 4 : 0;
-            const caloriesFromSalt = salt ? salt * 0 : 0;  // Salt doesn't contribute to calories, but we leave it here for completeness
-            return caloriesFromFat + caloriesFromSugar + caloriesFromSalt;
         }
 
         function displayProductInfo(product) {
-            let resultHtml = `<h3>${product.product_name || "Unknown Product"}</h3>`;
+            let resultHtml = `<h3>Product: ${product.product_name || "Unknown"}</h3>`;
             resultHtml += "<h4>Ingredients:</h4><ul>";
 
-            let ingredients = [];
             if (product.ingredients_text) {
-                ingredients = product.ingredients_text.split(",").map(ingredient => ingredient.trim());
+                const ingredients = product.ingredients_text.split(",").map(ingredient => ingredient.trim());
                 ingredients.forEach(ingredient => {
                     resultHtml += `<li>${ingredient}</li>`;
                 });
@@ -290,20 +255,11 @@
                 resultHtml += "<li>No ingredients listed.</li>";
             }
 
-            // Nutritional Information
             if (product.nutriments) {
                 resultHtml += "<h4>Nutritional Information:</h4><ul>";
                 if (product.nutriments.energy_kcal) {
                     resultHtml += `<li>Energy: ${product.nutriments.energy_kcal} kcal</li>`;
-                } else {
-                    // Calculate calories if not provided
-                    const fat = product.nutriments.fat || 0;
-                    const sugars = product.nutriments.sugars || 0;
-                    const salt = product.nutriments.salt || 0;
-                    const calculatedCalories = calculateCalories(fat, sugars, salt);
-                    resultHtml += `<li>Energy: ${calculatedCalories} kcal (calculated)</li>`;
                 }
-
                 if (product.nutriments.fat) {
                     resultHtml += `<li>Fat: ${product.nutriments.fat} g</li>`;
                 }
@@ -314,9 +270,60 @@
                     resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
                 }
                 resultHtml += "</ul>";
+
+                // Provide personalized consumption recommendations
+                resultHtml += "<h4>Consumption Advice:</h4>";
+                resultHtml += generateConsumptionAdvice(product.nutriments);
             }
 
             document.getElementById("result").innerHTML = resultHtml;
+        }
+
+        function generateConsumptionAdvice(nutriments) {
+            let advice = "";
+
+            // Set basic daily limits for an average adult
+            const dailyLimits = {
+                energy_kcal: 2000,  // kcal
+                fat: 70,            // grams
+                sugars: 30,         // grams
+                salt: 6             // grams
+            };
+
+            // Energy (calories) recommendation
+            if (nutriments.energy_kcal) {
+                const percentage = (nutriments.energy_kcal / dailyLimits.energy_kcal) * 100;
+                advice += `<p>This product contains ${nutriments.energy_kcal} kcal, which is ${Math.round(percentage)}% of the average adult's daily energy intake.</p>`;
+            }
+
+            // Fat recommendation
+            if (nutriments.fat) {
+                const fatPercentage = (nutriments.fat / dailyLimits.fat) * 100;
+                advice += `<p>This product contains ${nutriments.fat}g of fat, which is ${Math.round(fatPercentage)}% of the recommended daily fat intake.</p>`;
+            }
+
+            // Sugars recommendation
+            if (nutriments.sugars) {
+                const sugarPercentage = (nutriments.sugars / dailyLimits.sugars) * 100;
+                advice += `<p>This product contains ${nutriments.sugars}g of sugar, which is ${Math.round(sugarPercentage)}% of the recommended daily sugar intake.</p>`;
+            }
+
+            // Salt recommendation
+            if (nutriments.salt) {
+                const saltPercentage = (nutriments.salt / dailyLimits.salt) * 100;
+                advice += `<p>This product contains ${nutriments.salt}g of salt, which is ${Math.round(saltPercentage)}% of the recommended daily salt intake.</p>`;
+            }
+
+            // Provide moderation advice for high-risk ingredients
+            if (nutriments.salt > 2) {
+                advice += `<p><strong>Note:</strong> This product has a high amount of salt. Excessive salt intake can lead to high blood pressure. Consume in moderation.</p>`;
+            }
+
+            if (nutriments.sugars > 15) {
+                advice += `<p><strong>Note:</strong> This product contains a high amount of sugar. Consuming too much sugar can contribute to weight gain and other health issues. Consider limiting intake.</p>`;
+            }
+
+            return advice;
         }
 
         function analyzeRisks(ingredients) {
