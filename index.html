@@ -15,13 +15,26 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             height: 100vh;
+            padding-top: 20px;
         }
 
         h1 {
             color: #333;
             margin: 20px 0;
+        }
+
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
         }
 
         .scanner-container {
@@ -59,7 +72,7 @@
 
         #barcode-scanner {
             width: 100%;
-            height: 300px;
+            height: 250px;
             border-radius: 12px;
             background-color: #333;
             margin-top: 20px;
@@ -100,27 +113,21 @@
             font-size: 14px;
         }
 
-        /* Responsive Design */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-
-            .scanner-container, #result {
-                width: 100%;
-            }
+        .scanner-container button {
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
+    <button class="language-selector" onclick="toggleLanguage()">Switch to Italiano</button>
     <h1>Scan a Product Barcode</h1>
-    
+
     <div class="scanner-container">
         <button onclick="startScanner()">
             <i class="fas fa-barcode"></i> Start Scanning
         </button>
         <div id="barcode-scanner"></div>
-        <div id="feedback"></div> <!-- Feedback for debugging -->
+        <div id="feedback"></div>
     </div>
 
     <div id="result"></div>
@@ -148,6 +155,8 @@
                 sugars: "Sugars",
                 salt: "Salt",
                 daily_intake: "Recommended Daily Intake",
+                cancer_warning: "Cancerogenic potential detected!",
+                openai_suggestion: "OpenAI suggests the following daily intake based on this product's content: "
             },
             it: {
                 scanner_starting: "Scanner in avvio...",
@@ -161,10 +170,20 @@
                 sugars: "Zuccheri",
                 salt: "Sale",
                 daily_intake: "Assunzione Giornaliera Raccomandata",
+                cancer_warning: "Potenziale cancerogeno rilevato!",
+                openai_suggestion: "OpenAI suggerisce la seguente quantità giornaliera in base al contenuto di questo prodotto: "
             }
         };
 
         let currentLanguage = 'en'; // default language
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'en' ? 'it' : 'en';
+            document.querySelector('.language-selector').textContent = currentLanguage === 'en' ? 'Switch to Italiano' : 'Switch to English';
+            fetchProductData(lastScannedBarcode); // Update display when switching language
+        }
+
+        let lastScannedBarcode = null;
 
         function startScanner() {
             document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].scanner_starting;
@@ -192,9 +211,9 @@
             });
 
             Quagga.onDetected(function(result) {
-                const barcode = result.codeResult.code;
-                document.getElementById("feedback").innerHTML = "Barcode detected: " + barcode;
-                fetchProductData(barcode);
+                lastScannedBarcode = result.codeResult.code;
+                document.getElementById("feedback").innerHTML = "Barcode detected: " + lastScannedBarcode;
+                fetchProductData(lastScannedBarcode);
             });
         }
 
@@ -207,77 +226,19 @@
                     if (data.status === 1) {
                         displayProductInfo(data.product);
                     } else {
-                        document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].product_not_found;
+                        document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].failed_to_fetch;
+                        fetchProductFromOtherApis(barcode);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     document.getElementById("feedback").innerHTML = LANGUAGES[currentLanguage].failed_to_fetch;
+                    fetchProductFromOtherApis(barcode);
                 });
         }
 
-        function displayProductInfo(product) {
-            let resultHtml = `<h3>Product: ${product.product_name || "Unknown"}</h3>`;
-            resultHtml += "<h4>" + LANGUAGES[currentLanguage].risky_ingredients + ":</h4><ul>";
-
-            if (product.ingredients_text) {
-                const ingredients = product.ingredients_text.split(",").map(ingredient => ingredient.trim());
-                ingredients.forEach(ingredient => {
-                    resultHtml += `<li>${ingredient}</li>`;
-                });
-
-                const riskyIngredients = analyzeRisks(ingredients);
-                if (riskyIngredients.length > 0) {
-                    resultHtml += "<h4>" + LANGUAGES[currentLanguage].risky_ingredients + ":</h4><ul>";
-                    riskyIngredients.forEach(risk => {
-                        resultHtml += `<li class="ingredient-risk"><strong>${risk.ingredient}</strong>: ${risk.risk}</li>`;
-                    });
-                    resultHtml += "</ul>";
-                } else {
-                    resultHtml += "<p>" + LANGUAGES[currentLanguage].no_risky_ingredients + "</p>";
-                }
-            } else {
-                resultHtml += "<li>No ingredients listed.</li>";
-            }
-
-            if (product.nutriments) {
-                resultHtml += "<h4>" + LANGUAGES[currentLanguage].energy + ":</h4><ul>";
-                if (product.nutriments.energy_kcal) {
-                    resultHtml += `<li>${LANGUAGES[currentLanguage].energy}: ${product.nutriments.energy_kcal} kcal</li>`;
-                }
-                if (product.nutriments.fat) {
-                    resultHtml += `<li>${LANGUAGES[currentLanguage].fat}: ${product.nutriments.fat} g</li>`;
-                }
-                if (product.nutriments.sugars) {
-                    resultHtml += `<li>${LANGUAGES[currentLanguage].sugars}: ${product.nutriments.sugars} g</li>`;
-                }
-                if (product.nutriments.salt) {
-                    resultHtml += `<li>${LANGUAGES[currentLanguage].salt}: ${product.nutriments.salt} g</li>`;
-                }
-                resultHtml += "</ul>";
-            }
-
-            // Add daily intake information if available
-            if (product.nutriments && product.nutriments.energy_kcal) {
-                resultHtml += `<p><strong>${LANGUAGES[currentLanguage].daily_intake}:</strong> ${product.nutriments.energy_kcal * 0.02} kcal/day (based on standard recommendations)</p>`;
-            }
-
-            document.getElementById("result").innerHTML = resultHtml;
-        }
-
-        function analyzeRisks(ingredients) {
-            const risks = [];
-            ingredients.forEach(ingredient => {
-                const lowerIngredient = ingredient.toLowerCase();
-                if (RISKY_INGREDIENTS[lowerIngredient]) {
-                    risks.push({
-                        ingredient: ingredient,
-                        risk: RISKY_INGREDIENTS[lowerIngredient]
-                    });
-                }
-            });
-            return risks;
-        }
-    </script>
-</body>
-</html>
+        function fetchProductFromOtherApis(barcode) {
+            // Example for Yuka API integration:
+            const yukaApiUrl = `https://api.yuka.io/v1/product/${barcode}`;
+            fetch(yukaApiUrl)
+                .then(response
