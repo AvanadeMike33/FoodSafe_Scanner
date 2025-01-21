@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Product Analyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+    <h1>Scan a Product Barcode</h1>
+    
+    <button onclick="startScanner()">Start Scanning</button>
+    <div id="barcode-scanner"></div>
+    
+    <div id="result"></div>
+    
+    <script>
+        const RISKY_INGREDIENTS = {
+            "aspartame": "May cause allergic reactions and has potential brain effects.",
+            "BHA": "Potential carcinogen linked to liver and kidney damage.",
+            "BHT": "Potential carcinogen that can alter metabolism.",
+            "acrylamide": "Classified as a carcinogen, linked to increased cancer risk.",
+            "monosodium glutamate": "Can cause headaches and other adverse reactions.",
+            "salt": "Excessive consumption of salt can lead to high blood pressure, increased risk of heart disease, stroke, kidney disease, and headaches due to dehydration."
+        };
+
+        function startScanner() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#barcode-scanner'),
+                    constraints: {
+                        facingMode: "environment"
+                    }
+                },
+                decoder: {
+                    readers: ["ean_reader", "upc_reader"]
+                }
+            }, function(err) {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function(result) {
+                const barcode = result.codeResult.code;
+                alert("Barcode detected: " + barcode);
+                fetchProductData(barcode);
+            });
+        }
+
+        function fetchProductData(barcode) {
+            const apiUrl = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`; 
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 1) {
+                        displayProductInfo(data.product);
+                    } else {
+                        alert('Product not found!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to fetch product data!');
+                });
+        }
+
+        function displayProductInfo(product) {
+            let resultHtml = `<h3>Product: ${product.product_name || "Unknown"}</h3>`;
+            resultHtml += "<h4>Ingredients:</h4><ul>";
+            
+            if (product.ingredients_text) {
+                const ingredients = product.ingredients_text.split(",").map(ingredient => ingredient.trim());
+                ingredients.forEach(ingredient => {
+                    resultHtml += `<li>${ingredient}</li>`;
+                });
+                const riskyIngredients = analyzeRisks(ingredients);
+                if (riskyIngredients.length > 0) {
+                    resultHtml += "<h4>Risky Ingredients:</h4><ul>";
+                    riskyIngredients.forEach(risk => {
+                        resultHtml += `<li><strong>${risk.ingredient}</strong>: ${risk.risk}</li>`;
+                    });
+                    resultHtml += "</ul>";
+                } else {
+                    resultHtml += "<p>No risky ingredients found.</p>";
+                }
+            } else {
+                resultHtml += "<li>No ingredients listed.</li>";
+            }
+            
+            resultHtml += "</ul>";
+
+            if (product.nutriments) {
+                resultHtml += "<h4>Nutritional Information:</h4><ul>";
+                if (product.nutriments.energy_kcal) {
+                    resultHtml += `<li>Energy: ${product.nutriments.energy_kcal} kcal</li>`;
+                }
+                if (product.nutriments.fat) {
+                    resultHtml += `<li>Fat: ${product.nutriments.fat} g</li>`;
+                }
+                if (product.nutriments.sugars) {
+                    resultHtml += `<li>Sugars: ${product.nutriments.sugars} g</li>`;
+                }
+                if (product.nutriments.salt) {
+                    resultHtml += `<li>Salt: ${product.nutriments.salt} g</li>`;
+                }
+                resultHtml += "</ul>";
+            }
+
+            document.getElementById("result").innerHTML = resultHtml;
+        }
+
+
+        function analyzeRisks(ingredients) {
+            const risks = [];
+            ingredients.forEach(ingredient => {
+                const lowerIngredient = ingredient.toLowerCase();
+                if (RISKY_INGREDIENTS[lowerIngredient]) {
+                    risks.push({
+                        ingredient: ingredient,
+                        risk: RISKY_INGREDIENTS[lowerIngredient]
+                    });
+                }
+            });
+            return risks;
+        }
+    </script>
+</body>
+</html>
