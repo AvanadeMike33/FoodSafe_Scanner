@@ -273,37 +273,32 @@
         }
 
         function calculateRecommendedPortion(product) {
-            // Calcolare le porzioni basate sulle calorie
+            // Calculate portion size based on calories and daily recommendations
             const caloriesPerPortion = product.nutriments.energy_kcal || 0;
-            const portionBasedOnCalories = caloriesPerPortion > 0 ? DAILY_RECOMMENDATIONS.calories / caloriesPerPortion : 0;
-
-            // Calcolare le porzioni basate su grassi, zuccheri e sale
-            const recommendedFatPortion = product.nutriments.fat ? DAILY_RECOMMENDATIONS.fat / product.nutriments.fat : 0;
-            const recommendedSugarPortion = product.nutriments.sugars ? DAILY_RECOMMENDATIONS.sugar / product.nutriments.sugars : 0;
-            const recommendedSaltPortion = product.nutriments.salt ? DAILY_RECOMMENDATIONS.salt / product.nutriments.salt : 0;
-
-            // Calcolare la media delle porzioni
-            const averagePortion = (portionBasedOnCalories + recommendedFatPortion + recommendedSugarPortion + recommendedSaltPortion) / 4;
-
-            // Creare il messaggio con le informazioni
+            const portionBasedOnCalories = DAILY_RECOMMENDATIONS.calories / caloriesPerPortion;
+            
+            // Provide a basic recommendation on how much of the product to consume based on calories
             let recommendedPortionMessage = "";
             if (caloriesPerPortion > 0) {
-                recommendedPortionMessage = `Per rispettare il tuo apporto calorico giornaliero, puoi consumare circa ${Math.round(portionBasedOnCalories)} porzioni di questo prodotto. `;
+                recommendedPortionMessage = `You could consume approximately ${Math.round(portionBasedOnCalories)} portions of this product to meet your daily calorie intake. `;
             }
 
-            recommendedPortionMessage += `In base ai grassi, zuccheri e sale, puoi consumare in media circa ${Math.round(averagePortion)} porzioni di questo prodotto al giorno per rimanere entro le raccomandazioni quotidiane.`;
+            // Recommendations based on fat, sugar, and salt
+            const recommendedFatPortion = DAILY_RECOMMENDATIONS.fat / (product.nutriments.fat || 1);
+            const recommendedSugarPortion = DAILY_RECOMMENDATIONS.sugar / (product.nutriments.sugars || 1);
+            const recommendedSaltPortion = DAILY_RECOMMENDATIONS.salt / (product.nutriments.salt || 1);
 
-            recommendedPortionMessage += `
+            recommendedPortionMessage += `To stay healthy, avoid exceeding daily limits of fats, sugars, and salt. 
 
-            - Puoi consumare fino a ${Math.round(recommendedFatPortion)} porzioni basate sui grassi.
-            - Puoi consumare fino a ${Math.round(recommendedSugarPortion)} porzioni basate sugli zuccheri.
-            - Puoi consumare fino a ${Math.round(recommendedSaltPortion)} porzioni basate sul sale.`;
+            - You can safely consume up to ${Math.round(recommendedFatPortion)} portions based on fat.
+            - You can safely consume up to ${Math.round(recommendedSugarPortion)} portions based on sugars.
+            - You can safely consume up to ${Math.round(recommendedSaltPortion)} portions based on salt.`;
 
             return recommendedPortionMessage;
         }
 
         function displayProductInfo(product) {
-            let resultHtml = `<h3>${product.product_name || "Unknown Product"}</h3>`; 
+            let resultHtml = `<h3>${product.product_name || "Unknown Product"}</h3>`;
             resultHtml += "<h4>Ingredients:</h4><ul>";
 
             let ingredients = [];
@@ -333,7 +328,7 @@
                 if (product.nutriments.energy_kcal) {
                     resultHtml += `<li>Energy: ${product.nutriments.energy_kcal} kcal</li>`;
                 } else {
-                    // Calcolare le calorie se non fornite
+                    // Calculate calories if not provided
                     const fat = product.nutriments.fat || 0;
                     const sugars = product.nutriments.sugars || 0;
                     const salt = product.nutriments.salt || 0;
