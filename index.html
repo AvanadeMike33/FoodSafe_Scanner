@@ -181,6 +181,12 @@
             salt: 6  // g
         };
 
+        const MEASUREMENTS = {
+            spoon: 15,  // Approximate grams per tablespoon
+            cup: 240,  // Approximate grams per cup
+            plate: 300  // Approximate grams per plate
+        };
+
         let lastScannedBarcode = null;
         let quaggaInitialized = false;
 
@@ -273,27 +279,18 @@
         }
 
         function calculateRecommendedPortion(product) {
-            // Calculate portion size based on calories and daily recommendations
-            const caloriesPerPortion = product.nutriments.energy_kcal || 0;
-            const portionBasedOnCalories = DAILY_RECOMMENDATIONS.calories / caloriesPerPortion;
-            
-            // Provide a basic recommendation on how much of the product to consume based on calories
-            let recommendedPortionMessage = "";
-            if (caloriesPerPortion > 0) {
-                recommendedPortionMessage = `You could consume approximately ${Math.round(portionBasedOnCalories)} portions of this product to meet your daily calorie intake. `;
-            }
-
-            // Recommendations based on fat, sugar, and salt
-            const recommendedFatPortion = DAILY_RECOMMENDATIONS.fat / (product.nutriments.fat || 1);
-            const recommendedSugarPortion = DAILY_RECOMMENDATIONS.sugar / (product.nutriments.sugars || 1);
-            const recommendedSaltPortion = DAILY_RECOMMENDATIONS.salt / (product.nutriments.salt || 1);
-
-            recommendedPortionMessage += `To stay healthy, avoid exceeding daily limits of fats, sugars, and salt. 
+            const recommendedPortionMessage = `
+            Based on daily recommendations:
+            - You should consume a maximum of 70g of fat, 50g of sugar, and 6g of salt per day to stay healthy. 
 
             - You can safely consume up to ${Math.round(recommendedFatPortion)} portions based on fat.
             - You can safely consume up to ${Math.round(recommendedSugarPortion)} portions based on sugars.
-            - You can safely consume up to ${Math.round(recommendedSaltPortion)} portions based on salt.`;
+            - You can safely consume up to ${Math.round(recommendedSaltPortion)} portions based on salt.
 
+            In practical terms:
+            - A portion could be around 1 tablespoon (15g) or 1 plate (300g) of food, depending on the product.
+            `;
+            
             return recommendedPortionMessage;
         }
 
