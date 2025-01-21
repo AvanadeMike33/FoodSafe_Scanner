@@ -181,12 +181,6 @@
             salt: 6  // g
         };
 
-        const MEASUREMENTS = {
-            spoon: 15,  // Approximate grams per tablespoon
-            cup: 240,  // Approximate grams per cup
-            plate: 300  // Approximate grams per plate
-        };
-
         let lastScannedBarcode = null;
         let quaggaInitialized = false;
 
@@ -279,23 +273,37 @@
         }
 
         function calculateRecommendedPortion(product) {
-            const recommendedPortionMessage = `
-            Based on daily recommendations:
-            - You should consume a maximum of 70g of fat, 50g of sugar, and 6g of salt per day to stay healthy. 
+            // Calcolare le porzioni basate sulle calorie
+            const caloriesPerPortion = product.nutriments.energy_kcal || 0;
+            const portionBasedOnCalories = caloriesPerPortion > 0 ? DAILY_RECOMMENDATIONS.calories / caloriesPerPortion : 0;
 
-            - You can safely consume up to ${Math.round(recommendedFatPortion)} portions based on fat.
-            - You can safely consume up to ${Math.round(recommendedSugarPortion)} portions based on sugars.
-            - You can safely consume up to ${Math.round(recommendedSaltPortion)} portions based on salt.
+            // Calcolare le porzioni basate su grassi, zuccheri e sale
+            const recommendedFatPortion = product.nutriments.fat ? DAILY_RECOMMENDATIONS.fat / product.nutriments.fat : 0;
+            const recommendedSugarPortion = product.nutriments.sugars ? DAILY_RECOMMENDATIONS.sugar / product.nutriments.sugars : 0;
+            const recommendedSaltPortion = product.nutriments.salt ? DAILY_RECOMMENDATIONS.salt / product.nutriments.salt : 0;
 
-            In practical terms:
-            - A portion could be around 1 tablespoon (15g) or 1 plate (300g) of food, depending on the product.
-            `;
-            
+            // Calcolare la media delle porzioni
+            const averagePortion = (portionBasedOnCalories + recommendedFatPortion + recommendedSugarPortion + recommendedSaltPortion) / 4;
+
+            // Creare il messaggio con le informazioni
+            let recommendedPortionMessage = "";
+            if (caloriesPerPortion > 0) {
+                recommendedPortionMessage = `Per rispettare il tuo apporto calorico giornaliero, puoi consumare circa ${Math.round(portionBasedOnCalories)} porzioni di questo prodotto. `;
+            }
+
+            recommendedPortionMessage += `In base ai grassi, zuccheri e sale, puoi consumare in media circa ${Math.round(averagePortion)} porzioni di questo prodotto al giorno per rimanere entro le raccomandazioni quotidiane.`;
+
+            recommendedPortionMessage += `
+
+            - Puoi consumare fino a ${Math.round(recommendedFatPortion)} porzioni basate sui grassi.
+            - Puoi consumare fino a ${Math.round(recommendedSugarPortion)} porzioni basate sugli zuccheri.
+            - Puoi consumare fino a ${Math.round(recommendedSaltPortion)} porzioni basate sul sale.`;
+
             return recommendedPortionMessage;
         }
 
         function displayProductInfo(product) {
-            let resultHtml = `<h3>${product.product_name || "Unknown Product"}</h3>`;
+            let resultHtml = `<h3>${product.product_name || "Unknown Product"}</h3>`; 
             resultHtml += "<h4>Ingredients:</h4><ul>";
 
             let ingredients = [];
@@ -325,7 +333,7 @@
                 if (product.nutriments.energy_kcal) {
                     resultHtml += `<li>Energy: ${product.nutriments.energy_kcal} kcal</li>`;
                 } else {
-                    // Calculate calories if not provided
+                    // Calcolare le calorie se non fornite
                     const fat = product.nutriments.fat || 0;
                     const sugars = product.nutriments.sugars || 0;
                     const salt = product.nutriments.salt || 0;
