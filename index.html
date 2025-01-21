@@ -72,8 +72,8 @@
 
         #barcode-scanner {
             width: 100%;
-            height: 250px;
-            border-radius: 12px;
+            height: 100vh;
+            border-radius: 0;
             background-color: #333;
             margin-top: 20px;
         }
@@ -124,7 +124,7 @@
 
     <div class="scanner-container">
         <button onclick="startScanner()">
-            <i class="fas fa-barcode"></i> Start Scanning
+            <i class="fas fa-barcode" style="font-size: 30px; color: #fff;"></i> Start Scanning
         </button>
         <div id="barcode-scanner"></div>
         <div id="feedback"></div>
@@ -172,6 +172,21 @@
                 daily_intake: "Assunzione Giornaliera Raccomandata",
                 cancer_warning: "Potenziale cancerogeno rilevato!",
                 openai_suggestion: "OpenAI suggerisce la seguente quantità giornaliera in base al contenuto di questo prodotto: "
+            },
+            zh: {
+                scanner_starting: "扫描器正在启动...",
+                scanner_started: "扫描器已启动。请扫描条形码。",
+                product_not_found: "未找到产品！",
+                failed_to_fetch: "获取产品数据失败！",
+                risky_ingredients: "风险成分",
+                no_risky_ingredients: "未发现风险成分。",
+                energy: "能量",
+                fat: "脂肪",
+                sugars: "糖分",
+                salt: "盐",
+                daily_intake: "每日推荐摄入量",
+                cancer_warning: "检测到致癌潜力！",
+                openai_suggestion: "OpenAI根据此产品的内容建议以下每日摄入量："
             }
         };
 
@@ -180,8 +195,8 @@
         let quaggaInitialized = false;
 
         function toggleLanguage() {
-            currentLanguage = currentLanguage === 'en' ? 'it' : 'en';
-            document.querySelector('.language-selector').textContent = currentLanguage === 'en' ? 'Switch to Italiano' : 'Switch to English';
+            currentLanguage = currentLanguage === 'en' ? 'it' : (currentLanguage === 'it' ? 'zh' : 'en');
+            document.querySelector('.language-selector').textContent = LANGUAGES[currentLanguage].switch_button;
             fetchProductData(lastScannedBarcode); // Update display when switching language
         }
 
