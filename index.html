@@ -9,7 +9,6 @@
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #f9f9f9;
             margin: 0;
             padding: 0;
             display: flex;
@@ -17,6 +16,7 @@
             align-items: center;
             justify-content: flex-start;
             height: 100vh;
+            background-color: #f9f9f9;
         }
 
         h1 {
@@ -76,6 +76,7 @@
             width: 90%;
             max-width: 350px;
             text-align: left;
+            display: none; /* Hidden until scanning is complete */
         }
 
         h3, h4 {
@@ -162,7 +163,8 @@
                 lastScannedBarcode = result.codeResult.code;
                 document.getElementById("feedback").innerHTML = "Barcode detected: " + lastScannedBarcode;
                 fetchProductData(lastScannedBarcode);
-                document.getElementById("barcode-scanner").style.display = "none";  // Hide camera
+                document.getElementById("barcode-scanner").style.display = "none";  // Hide camera after scan
+                document.getElementById("result").style.display = "block";  // Show result
             });
         }
 
@@ -225,7 +227,6 @@
                 resultHtml += "</ul>";
             }
 
-            resultHtml += `<button onclick="startScanner()">Scan Another Product</button>`;
             document.getElementById("result").innerHTML = resultHtml;
         }
 
