@@ -109,6 +109,14 @@
             font-size: 1.1rem;
             margin-bottom: 8px;
         }
+
+        #preview {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
@@ -130,8 +138,11 @@
             <div id="loading" class="loading">Caricamento...</div>
             <div id="productInfo" class="product-info"></div>
         </div>
+
+        <video id="preview"></video>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/instascan@1.0.0/instascan.min.js"></script>
     <script>
         let scanner;
 
@@ -246,7 +257,5 @@
             startScanner();
         });
     </script>
-
-    <script type="module" src="https://cdn.jsdelivr.net/npm/instascan@1.0.0/instascan.min.js"></script>
 </body>
 </html>
